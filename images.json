@@ -1,0 +1,10 @@
+[
+    {
+        "id": "arch-linux-arm-2025-12.img",
+        "image": "https://github.com/virtzhouse/vms/releases/download/0.9/ArchLinuxARM-minimal.img.lzma",
+        "type": "linux",
+        "hash": "https://github.com/virtzhouse/vms/releases/download/0.9/ArchLinuxARM-minimal.img.lzma.sha256",
+        "signature": "https://github.com/virtzhouse/vms/releases/download/0.9/ArchLinuxARM-minimal.img.lzma.sig",
+        "pubkey": "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x"
+    }
+]
