@@ -1,0 +1,48 @@
+#  /root/dialogrc - Kali Linux Style (Dragon/Purple Edition)
+
+screen_color = (white,black,off)
+dialog_color = (white,black,off)
+title_color = (cyan,black,on)
+border_color = (blue,black,on)
+shadow_color = (black,black,on)
+
+button_inactive_color = (white,black,off)
+button_key_inactive_color = (white,black,off)
+button_label_inactive_color = (white,black,off)
+
+button_active_color = (white,blue,on)
+button_key_active_color = (magenta,blue,on)
+button_label_active_color = (white,blue,on)
+tag_key_selected_color = (white,blue,on)
+item_selected_color = (white,blue,on)
+
+form_text_color = (white,blue,on)
+form_item_readonly_color = (cyan,black,on)
+
+itemhelp_color = (white,blue,off)
+
+inputbox_color = dialog_color
+inputbox_border_color = border_color
+searchbox_color = dialog_color
+searchbox_title_color = title_color
+searchbox_border_color = border_color
+position_indicator_color = (magenta,black,on)
+menubox_color = dialog_color
+menubox_border_color = border_color
+item_color = dialog_color
+tag_color = (cyan,black,on)
+tag_selected_color = (white,blue,on)
+tag_key_color = (magenta,black,off)
+check_color = dialog_color
+check_selected_color = button_active_color
+uarrow_color = (cyan,black,on)
+darrow_color = (cyan,black,on)
+form_active_text_color = button_active_color
+gauge_color = (magenta,black,on)
+border2_color = (blue,black,on)
+searchbox_border2_color = border2_color
+menubox_border2_color = border2_color
+
+# Style Settings
+use_shadow = off
+use_colors = on
