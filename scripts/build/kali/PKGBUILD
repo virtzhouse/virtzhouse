@@ -1,0 +1,50 @@
+# Maintainer: orphaned
+pkgname=mmdebstrap-master
+pkgver=1.5.7
+pkgrel=1
+pkgdesc="create a Debian chroot"
+arch=('any')
+url="https://salsa.debian.org/debian/mmdebstrap/-"
+license=('MIT')
+depends=('apt' 'python' 'perl')
+optdepends=(
+        'debian-archive-keyring: Debian PKI support'
+        'ubuntu-keyring: Ubuntu PKI support'
+        'qemu-user-static: foreign-architecture support'
+        'qemu-user-static-binfmt: foreign-architecture support'
+        'arch-test: foreign-architecture support')
+source=("$url/archive/master/$pkgname.tar.gz")
+sha256sums=('987b63bd69e9280d296c7fe29451e0e68bdfebfd194eeca8db4bce111939fda3')
+
+prepare() {
+        cd "$pkgname"
+        sed -i 's,/usr/libexec,/usr/lib,g' gpgvnoexpkeysig mmdebstrap
+}
+
+package() {
+        cd "$pkgname"
+
+        source <(perl -V:vendorarch)
+        mkdir -p $pkgdir$vendorarch
+        h2ph -d $pkgdir$vendorarch -a syscall.h sys/ioctl.h || true
+
+        mkdir -p $pkgdir/usr/bin
+        cp -a mmdebstrap $pkgdir/usr/bin/mmdebstrap
+        cp -a tarfilter $pkgdir/usr/bin/mmtarfilter
+        mkdir -p $pkgdir/usr/lib/apt/solvers
+        cp -a proxysolver $pkgdir/usr/lib/apt/solvers/mmdebstrap-dump-solution
+        mkdir -p $pkgdir/usr/share/mmdebstrap
+        cp -a hooks $pkgdir/usr/share/mmdebstrap
+        mkdir -p $pkgdir/usr/lib/mmdebstrap
+        cp -a gpgvnoexpkeysig $pkgdir/usr/lib/mmdebstrap
+        cp -a ldconfig.fakechroot $pkgdir/usr/lib/mmdebstrap
+
+        mkdir -p $pkgdir/usr/share/man/man1
+        pod2man mmdebstrap > $pkgdir/usr/share/man/man1/mmdebstrap.1
+}
+
+#
+# curl -Lo ./mmdebstrap-master.tar.gz https://salsa.debian.org/debian/mmdebstrap/-/archive/master/mmdebstrap-master.tar.gz
+# curl -Lo ./kali-archive-keyring.gpg https://archive.kali.org/archive-keyring.gpg
+#
+

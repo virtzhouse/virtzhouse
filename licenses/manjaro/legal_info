@@ -1,0 +1,19 @@
+
+# Manjaro Licensing & Trademark Information
+
+## Software Licensing
+Manjaro is a roll-up of thousands of individual software packages. The core infrastructure
+ developed by the Manjaro Team (such as build tools, the Pamac package manager, and
+ Manjaro-specific scripts) are licensed under various licenses. 
+
+## Individual Packages
+As an Arch-based distribution, Manjaro provides software through its repositories and follows
+ open-source licensing standards. Licenses for individual packages can be found on a running
+ system within the respective package directory under `/usr/share/licenses/` or in the metadata
+ of the package manager (`pacman -Qi [package-name]`).
+
+## Trademark and Distribution
+The "Manjaro" name and the Manjaro logo are trademarks of **Manjaro GmbH & Co. KG**.
+
+*   **Manjaro Impressum & Legal:** [https://manjaro.org/imprint](https://manjaro.org/imprint)
+*   **Manjaro Terms of Use:** [https://manjaro.org/terms-of-use](https://manjaro.org/terms-of-use)

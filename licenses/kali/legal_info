@@ -1,0 +1,22 @@
+
+# Kali Linux Licensing & Trademark Information
+
+## Software Licensing
+Kali Linux is a roll-up of thousands of individual software packages. The core infrastructure
+ developed by OffSec (such as build scripts and Kali-specific tools) is primarily licensed under
+ the **GNU General Public License, version 2 or later (GPL-2.0-or-later)**.
+
+For a full copy of the license text, please refer to the `GPL-2.0-or-later` file in this directory
+ which is also available at [https://gitlab.com/kalilinux/build-scripts/kali-arm/-/raw/main/LICENSE](https://gitlab.com/kalilinux/build-scripts/kali-arm/-/raw/main/LICENSE)
+
+## Trademark and Distribution
+The "Kali Linux" name and the dragon logo are trademarks of **OffSec**. 
+
+If you use these scripts to build and distribute modified versions of Kali Linux, you must comply with the following
+ official policies:
+*   **Kali Linux Trademark Policy:** [https://www.kali.org/docs/policy/trademark/](https://www.kali.org/docs/policy/trademark/)
+*   **Kali Linux EULA:** [https://www.kali.org/docs/policy/eula/EULA.txt](https://www.kali.org/docs/policy/eula/EULA.txt)
+
+## Individual Packages
+As a derivative of Debian, Kali Linux follows the Debian Free Software Guidelines (DFSG). Licenses for individual
+ packages can be found on a running system under `/usr/share/doc/[package-name]/copyright`.

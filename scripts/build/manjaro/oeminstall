@@ -1,0 +1,214 @@
+#!/bin/bash
+# /root/oeminstall
+
+# am I root?
+if [ "$(id -u)" -ne 0 ]; then abort_and_restart "fatal error: this script must be run as root"; fi
+
+# suppress dmesg output and kill bootsplash
+echo 1 > /proc/sys/kernel/printk
+echo off > /sys/devices/platform/bootsplash.0/enabled
+
+# set script variables
+OEMSCRIPT="${BASH_SOURCE[0]}"
+TITLE="Finish OS Install"
+TMPDIR="/tmp"
+DIALOGRC="$(/usr/bin/dirname "$OEMSCRIPT")/dialogrc"
+
+# define functions
+msg() {
+    local GREEN=$'\033[1;32m'
+    local ALL_OFF=$'\033[0m'
+    local BOLD=$'\033[1m'
+    local mesg="$1"
+    printf "%b===>%b%b %s%b\n" "$GREEN" "$ALL_OFF" "$BOLD" "$mesg" "$ALL_OFF" >&2
+}
+
+abort_and_restart() {
+    /usr/bin/clear
+    local message="${1:-Configuration aborted. Restarting OEM script...}"
+    msg "$message"
+    if [[ $message == "fatal error:"* ]]; then exit 1; fi
+    /usr/bin/sleep 5 && exec /usr/bin/bash "$OEMSCRIPT"
+}
+
+OPTIONS_from() {
+    OPTIONS=()
+    while IFS="" read -r line; do
+        [[ -z "$line" ]] && continue
+        OPTIONS+=("$line" "$line")
+    done
+}
+
+distro-specifics() {
+    msg "setting up distro specifics ..."
+    /usr/bin/sleep 3
+    /usr/bin/rm -rf /etc/pacman.d/gnupg
+    /usr/bin/pacman-key --init 1>/dev/null
+    /usr/bin/pacman-key --populate archlinux archlinuxarm manjaro manjaro-arm 1>/dev/null
+}
+
+identifier_for_dhcp() {
+    msg "ensure MAC address is used for DHCP ..."
+    for file in /etc/systemd/network/*.network; do
+        [[ -f "$file" ]] || continue
+        section=$( /usr/bin/grep -q '^\[DHCP\]' "$file"; echo $? )
+        clientk=$( /usr/bin/grep -q '^ClientIdentifier=' "$file"; echo $? )
+        case "${section}_${clientk}" in
+        0_0) /usr/bin/sed -i '/^ClientIdentifier=/c\ClientIdentifier=mac' "$file";;
+        0_1) /usr/bin/sed -i '/^\[DHCP\]/a ClientIdentifier=mac' "$file";;
+        1_*) printf '\n\n[DHCP]\nClientIdentifier=mac\n' >> "$file";;
+        esac
+    done
+}
+
+create_fstab() {
+    msg "creating /etc/fstab ..."
+    /usr/bin/cat <<'EOF' > /etc/fstab
+
+# <file system> <dir> <type> <options> <dump> <pass>
+                                                                     
+/dev/disk/by-id/virtio-root-part1           /boot/efi   vfat defaults 0 2
+/dev/disk/by-id/virtio-root-part2           /           ext4 defaults 0 1
+
+/dev/disk/by-id/virtio-home-part1           /rw         ext4 nofail,defaults 0 2
+/rw/home                                    /home       none bind,nofail 0 0
+/rw/usrlocal                                /usr/local  none bind,nofail 0 0
+
+rosetta         /usr/local/bin/rosetta2     virtiofs    ro,nofail 0 0
+fileshare       /media/fileshare            virtiofs    rw,nofail 0 0
+EOF
+
+    /usr/bin/systemctl daemon-reload
+    /usr/bin/mkdir -p /media/fileshare
+}
+
+create_oem_install() {
+    echo "$PASSWORD" > $TMPDIR/password
+    echo "$PASSWORD" >> $TMPDIR/password
+    echo "$ROOTPASSWORD" > $TMPDIR/rootpassword
+    echo "$ROOTPASSWORD" >> $TMPDIR/rootpassword
+    
+    msg "Setting password for user..."
+    /usr/bin/passwd user < $TMPDIR/password 1> /dev/null 2>&1
+
+    msg "Setting password for root..."
+    /usr/bin/passwd root < $TMPDIR/rootpassword 1> /dev/null 2>&1
+
+    msg "Setting timezone to $TIMEZONE..."
+    /usr/bin/timedatectl set-timezone "$TIMEZONE" 1> /dev/null 2>&1
+    /usr/bin/timedatectl set-ntp true 1> /dev/null 2>&1
+
+    msg "Generating $LOCALE locale..."
+    /usr/bin/sed -i s/"#$LOCALE"/"$LOCALE"/g /etc/locale.gen 1> /dev/null 2>&1
+    /usr/bin/locale-gen 1> /dev/null 2>&1
+    /usr/bin/localectl set-locale "$LOCALE" 1> /dev/null 2>&1
+    
+    msg "Setting keymap to $KEYMAP..."
+    /usr/bin/localectl set-keymap "$KEYMAP" 1> /dev/null 2>&1
+    
+    msg "Setting hostname to $HOSTNAME..."
+    /usr/bin/hostnamectl set-hostname "$HOSTNAME" 1> /dev/null 2>&1
+
+    msg "Configuration complete. Cleaning up..."
+    /usr/bin/mv /usr/lib/systemd/system/getty@.service.bak /usr/lib/systemd/system/getty@.service
+    /usr/bin/rm -rf /var/log/*
+    /usr/bin/rm -f $TMPDIR/user $TMPDIR/password $TMPDIR/rootpassword
+    /usr/bin/rm -f /etc/issue
+    /usr/bin/rm -f /root/.bash_profile
+    /usr/bin/rm -f /root/.zprofile
+    /usr/bin/rm "$OEMSCRIPT"
+    /usr/bin/rm "$DIALOGRC"
+    
+    /usr/bin/sed -i s/"PermitRootLogin yes"/"#PermitRootLogin prohibit-password"/g /etc/ssh/sshd_config
+    /usr/bin/sed -i s/"PermitEmptyPasswords yes"/"#PermitEmptyPasswords no"/g /etc/ssh/sshd_config
+}
+
+resize-fs() {
+    msg "resizing root partition ..."
+    PART_DEV=$(/usr/bin/findmnt / -o source -n | /usr/bin/cut -f1 -d"[")
+    PART_NAME=$(echo "$PART_DEV" | /usr/bin/cut -d "/" -f 3)
+    DEV_NAME=$(echo /sys/block/*/"$PART_NAME" | /usr/bin/cut -d "/" -f 4)
+    DEV="/dev/${DEV_NAME}"
+    PART_NUM=$(/usr/bin/cat /sys/block/"${DEV_NAME}"/"${PART_NAME}"/partition)
+    SECTOR_SIZE=$(/usr/bin/cat /sys/block/"${DEV_NAME}"/size)
+    echo ", +" | /usr/bin/sfdisk --no-reread -N "$PART_NUM" "$DEV"
+    /usr/bin/partx -u "$DEV"
+
+    if [[ $(/usr/bin/lsblk -o NAME,FSTYPE | /usr/bin/grep "$PART_NAME" | /usr/bin/awk '{print $2}') = "btrfs" ]]
+    then /usr/bin/btrfs filesystem resize max /
+    else /usr/bin/resize2fs "$PART_DEV"
+    fi
+}
+
+# main
+export DIALOGRC
+OPTIONS=()
+
+OPTIONS_from < <(/usr/bin/localectl list-keymaps)
+KEYMAP=$(/usr/bin/dialog --clear --title "$TITLE" --menu \
+"choose your keyboard layout" 20 60 15 "${OPTIONS[@]}" 3>&1 1>&2 2>&3 3>&- )
+/usr/bin/loadkeys "$KEYMAP"
+
+PASSWORD=$(/usr/bin/dialog --clear --title "$TITLE" --insecure --passwordbox \
+"enter new password for user:" 8 60 3>&1 1>&2 2>&3 3>&- )
+if [ -z "$PASSWORD" ]; then abort_and_restart; fi
+
+CONFIRMPASSWORD=$(/usr/bin/dialog --clear --title "$TITLE" --insecure --passwordbox \
+"confirm password for user:" 8 60 3>&1 1>&2 2>&3 3>&- )
+if [ -z "$CONFIRMPASSWORD" ]; then abort_and_restart; fi
+if [[ "$PASSWORD" != "$CONFIRMPASSWORD" ]]; then abort_and_restart "user passwords do not match - restarting OEM script..."; fi
+
+ROOTPASSWORD=$(/usr/bin/dialog --clear --title "$TITLE" --insecure --passwordbox \
+"enter new password for root:" 8 60 3>&1 1>&2 2>&3 3>&- )
+if [ -z "$ROOTPASSWORD" ]; then abort_and_restart; fi
+
+CONFIRMROOTPASSWORD=$(/usr/bin/dialog --clear --title "$TITLE" --insecure --passwordbox \
+"confirm password for root:" 8 60 3>&1 1>&2 2>&3 3>&- )
+if [ -z "$CONFIRMROOTPASSWORD" ]; then abort_and_restart; fi
+if [[ "$ROOTPASSWORD" != "$CONFIRMROOTPASSWORD" ]]; then abort_and_restart "root passwords do not match - restarting OEM script..."; fi
+
+OPTIONS_from < <(/usr/bin/timedatectl list-timezones)
+TIMEZONE=$(/usr/bin/dialog --clear --title "$TITLE" --menu \
+"choose your timezone" 20 60 15 "${OPTIONS[@]}" 3>&1 1>&2 2>&3 3>&- )
+if [ -z "$TIMEZONE" ]; then abort_and_restart; fi
+
+OPTIONS_from < <(/usr/bin/grep -E 'UTF-8' /etc/locale.gen | /usr/bin/tail -n +2 | /usr/bin/awk '{print $1}' | /usr/bin/sed -e 's/^#*//')
+LOCALE=$(/usr/bin/dialog --clear --title "$TITLE" --menu \
+"choose your locale" 20 60 15 "${OPTIONS[@]}" 3>&1 1>&2 2>&3 3>&- )
+if [ -z "$LOCALE" ]; then abort_and_restart; fi
+
+HOSTNAME=$(/usr/bin/dialog --clear --title "$TITLE" --inputbox \
+"enter desired hostname for this system:" 8 60 3>&1 1>&2 2>&3 3>&- )
+if [ -z "$HOSTNAME" ]; then abort_and_restart; fi
+
+/usr/bin/dialog --clear --title "$TITLE" --yesno \
+"is the below information correct:
+    password for user = (password hidden)
+    password for root = (password hidden)
+    timezone = $TIMEZONE
+    locale = $LOCALE
+    hostname = $HOSTNAME" 20 60 3>&1 1>&2 2>&3 3>&-
+
+response=$?
+case $response in
+   0) clear; msg "proceeding.....";;
+   1) abort_and_restart;;
+   255) abort_and_restart;;
+esac
+
+# setup virtual machine
+create_oem_install
+resize-fs
+distro-specifics
+# setup virtzhouse features
+identifier_for_dhcp
+create_fstab
+
+# good bye and thanks for all the fish
+secs=$((5))
+while [ $secs -gt 0 ]; do
+   echo -ne "rebooting in ... $secs\033[0K\r"
+   sleep 1
+   : $((secs--))
+done
+reboot

@@ -1,0 +1,23 @@
+
+# Arch Linux ARM Licensing Information
+
+## Distribution Overview
+Arch Linux ARM is a community-based port of Arch Linux for ARM processors. Like the main Arch Linux project,
+ it is a distribution consisting of thousands of independent software components, each under its own specific
+ license (e.g., GPL, BSD, MIT, Apache).
+
+## Build Scripts and Metadata
+The build recipes (PKGBUILDs) and official scripts provided by the Arch Linux projects are generally licensed
+ under the **0BSD License** (Zero-Clause BSD). 
+
+For a full copy of this license text, please refer to the `0BSD.txt` file in this directory. The license is
+ also referenced under [https://archlinux.org/news/providing-a-license-for-package-sources/](https://archlinux.org/news/providing-a-license-for-package-sources/)
+
+## Trademark and Copyright
+*   **Arch Linux ARM** is a community project. 
+*   The "Arch Linux" name and logo are recognized trademarks of the Arch Linux project. 
+*   Copyright for the project's own code is held by the respective developers (© 2002-2026 Arch Linux / Arch Linux ARM contributors).
+
+## Individual Package Licenses
+Because the resulting system is an aggregate of many programs, you can find the specific license for any
+ installed package on a running system within the directory: `/usr/share/licenses/`
