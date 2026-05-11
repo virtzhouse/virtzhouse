@@ -42,6 +42,14 @@ systemctl enable auditd
 systemctl enable NetworkManager
 systemctl enable systemd-binfmt
 
+# uid 0
+chsh -s /usr/bin/zsh
+passwd -d root
+
+# uid 1000
+useradd -m -G wheel,video,audio,storage,power -s /usr/bin/zsh user
+passwd -d user
+
 EOF
 }
 
@@ -90,7 +98,6 @@ passwd -d root
 # uid 1000
 useradd -m -G wheel,video,audio,storage,power -s /usr/bin/zsh user
 passwd -d user
-
 
 EOF
 }

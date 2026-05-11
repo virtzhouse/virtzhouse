@@ -1,5 +1,7 @@
 This is a collection of scripts which are used for building root volume templates and custom linux kernels.
 
-Releases can be found on the Releases Page.
+The precomplied images can be found on the Releases Page.
 
-Always verify downloaded images using the provided public key and checksums, or build the images yourself from scratch using the provided build scripts.
+Always verify downloaded images using the provided public key and checksums, or build the images yourself from
+ scratch using the provided build scripts.
+ 
