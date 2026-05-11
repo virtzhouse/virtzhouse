@@ -58,27 +58,6 @@ identifier_for_dhcp() {
     done
 }
 
-create_fstab() {
-    msg "creating /etc/fstab ..."
-    /usr/bin/cat <<'EOF' > /etc/fstab
-
-# <file system> <dir> <type> <options> <dump> <pass>
-                                                                     
-/dev/disk/by-id/virtio-root-part1           /boot/efi   vfat defaults 0 2
-/dev/disk/by-id/virtio-root-part2           /           ext4 defaults 0 1
-
-/dev/disk/by-id/virtio-home-part1           /rw         ext4 nofail,defaults 0 2
-/rw/home                                    /home       none bind,nofail 0 0
-/rw/usrlocal                                /usr/local  none bind,nofail 0 0
-
-rosetta         /usr/local/bin/rosetta2     virtiofs    ro,nofail 0 0
-fileshare       /media/fileshare            virtiofs    rw,nofail 0 0
-EOF
-
-    /usr/bin/systemctl daemon-reload
-    /usr/bin/mkdir -p /media/fileshare
-}
-
 create_oem_install() {
     echo "$PASSWORD" > $TMPDIR/password
     echo "$PASSWORD" >> $TMPDIR/password
@@ -141,6 +120,9 @@ resize-fs() {
 }
 
 # main
+export DIALOGRC
+OPTIONS=() 
+
 OPTIONS_from < <(find /usr/share/keymaps/ -name '*.kmap.gz' | xargs basename -s .kmap.gz | sort)
 KEYMAP=$(/usr/bin/dialog --clear --title "$TITLE" --menu \
 "choose your keyboard layout" 20 60 15 "${OPTIONS[@]}" 3>&1 1>&2 2>&3 3>&- )
@@ -193,13 +175,11 @@ case $response in
    255) abort_and_restart;;
 esac
 
-# setup virtual machine
+# setup
 create_oem_install
 resize-fs
 distro-specifics
-# setup virtzhouse features
 identifier_for_dhcp
-create_fstab
 
 # good bye and thanks for all the fish
 secs=$((5))

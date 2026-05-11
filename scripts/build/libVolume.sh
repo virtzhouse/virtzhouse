@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export LIBMOUNT_UTAB=no
-
 setupVolume() {
     [[ $# -ne 2 ]] && { echo "${FUNCNAME[0]} expects 2 arguments" ; exit 1; }
     local imgFile="$1"

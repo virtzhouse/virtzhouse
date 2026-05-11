@@ -120,6 +120,9 @@ resize-fs() {
 }
 
 # main
+export DIALOGRC
+OPTIONS=()
+
 OPTIONS_from < <(/usr/bin/localectl list-keymaps)
 KEYMAP=$(/usr/bin/dialog --clear --title "$TITLE" --menu \
 "choose your keyboard layout" 20 60 15 "${OPTIONS[@]}" 3>&1 1>&2 2>&3 3>&- )
@@ -135,7 +138,7 @@ if [ -z "$CONFIRMPASSWORD" ]; then abort_and_restart; fi
 if [[ "$PASSWORD" != "$CONFIRMPASSWORD" ]]; then abort_and_restart "user passwords do not match - restarting OEM script..."; fi
 
 ROOTPASSWORD=$(/usr/bin/dialog --clear --title "$TITLE" --insecure --passwordbox \
-"enter password for root:" 8 60 3>&1 1>&2 2>&3 3>&- )
+"enter new password for root:" 8 60 3>&1 1>&2 2>&3 3>&- )
 if [ -z "$ROOTPASSWORD" ]; then abort_and_restart; fi
 
 CONFIRMROOTPASSWORD=$(/usr/bin/dialog --clear --title "$TITLE" --insecure --passwordbox \
@@ -172,7 +175,7 @@ case $response in
    255) abort_and_restart;;
 esac
 
-# setup virtual machine
+# setup
 create_oem_install
 resize-fs
 distro-specifics

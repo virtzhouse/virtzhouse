@@ -76,7 +76,7 @@ imageName() {
 extrasName() {
     [[ $# -ne 1 ]] && { echo "${FUNCNAME[0]} expects 1 argument" ; exit 1; }
     case "$1" in
-        cinnamon) echo "cinnamon lightdm lightdm-gtk-greeter xfce4-terminal" ;;
+        cinnamon) echo "cinnamon lightdm lightdm-gtk-greeter xfce4-terminal pamac" ;;
         container) echo "docker docker-compose";;
         *)        echo "" ;;
     esac
